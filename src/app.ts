@@ -52,6 +52,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
   })
 
+  // CORS設定
+  await app.register(import('@fastify/cors'), {
+    origin: env.NODE_ENV === 'development' ? '*' : false, // 開発環境では全許可
+    credentials: true,
+  })
+
   // プラグイン登録
   await app.register(import('./plugins/prisma.js'))
   await app.register(import('./plugins/jwt.js'))

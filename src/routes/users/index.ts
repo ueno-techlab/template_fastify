@@ -2,11 +2,7 @@ import { Type } from '@sinclair/typebox'
 import type { FastifyPluginAsync } from 'fastify'
 
 import { ErrorResponse } from '../auth/schema.js'
-import {
-  listUsersHandler,
-  createUserHandler,
-  getMeHandler,
-} from './handler.js'
+import { listUsersHandler, createUserHandler, getMeHandler } from './handler.js'
 import { UserResponse, CreateUserRequest } from './schema.js'
 
 const usersRoutes: FastifyPluginAsync = async (app) => {

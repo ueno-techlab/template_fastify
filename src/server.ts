@@ -25,9 +25,7 @@ async function start() {
       '🚀 サーバーが正常に起動しました'
     )
 
-    app.log.info(
-      `📖 APIドキュメント: http://localhost:${env.PORT}/docs`
-    )
+    app.log.info(`📖 APIドキュメント: http://localhost:${env.PORT}/docs`)
   } catch (err) {
     // アプリケーション起動に失敗した場合
     if (app) {
@@ -43,7 +41,10 @@ async function start() {
 // グレースフルシャットダウン処理
 async function shutdown(signal: string) {
   if (app) {
-    app.log.info({ signal }, '⏹️  シャットダウンシグナルを受信しました。サーバーを正常終了します...')
+    app.log.info(
+      { signal },
+      '⏹️  シャットダウンシグナルを受信しました。サーバーを正常終了します...'
+    )
 
     try {
       await app.close()

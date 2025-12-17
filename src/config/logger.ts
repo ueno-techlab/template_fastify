@@ -324,10 +324,7 @@ export function createPrismaLogger(): Logger | null {
       level: 'debug',
       base: { context: 'prisma' },
     },
-    pino.multistream([
-      { stream: consoleTransport },
-      { stream: queryLogStream },
-    ])
+    pino.multistream([{ stream: consoleTransport }, { stream: queryLogStream }])
   )
 
   return queryLogger

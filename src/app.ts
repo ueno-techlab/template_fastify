@@ -12,9 +12,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     requestIdLogLabel: 'reqId',
     genReqId: (req) => {
       // x-request-idヘッダーがあればそれを使用、なければ自動生成
-      return (
-        req.headers['x-request-id']?.toString() || generateRequestId()
-      )
+      return req.headers['x-request-id']?.toString() || generateRequestId()
     },
 
     // リクエスト/レスポンスの自動ログ

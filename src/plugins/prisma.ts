@@ -17,9 +17,7 @@ function getPrismaLogConfig(): Prisma.LogLevel[] | undefined {
   }
 
   if (PRISMA_LOG_LEVEL) {
-    return PRISMA_LOG_LEVEL.split(',').map((l) =>
-      l.trim()
-    ) as Prisma.LogLevel[]
+    return PRISMA_LOG_LEVEL.split(',').map((l) => l.trim()) as Prisma.LogLevel[]
   }
 
   // デフォルト
@@ -53,7 +51,7 @@ const prismaPlugin: FastifyPluginAsync = async (fastify) => {
   if (queryLogger && logLevels && typeof (prisma as any).$on === 'function') {
     if (logLevels.includes('query')) {
       try {
-        (prisma as any).$on('query', (e: Prisma.QueryEvent) => {
+        ;(prisma as any).$on('query', (e: Prisma.QueryEvent) => {
           queryLogger.debug(
             {
               query: e.query,
@@ -65,13 +63,15 @@ const prismaPlugin: FastifyPluginAsync = async (fastify) => {
           )
         })
       } catch (err) {
-        fastify.log.warn('Query event logging not available with driver adapter')
+        fastify.log.warn(
+          'Query event logging not available with driver adapter'
+        )
       }
     }
 
     if (logLevels.includes('error')) {
       try {
-        (prisma as any).$on('error', (e: Prisma.LogEvent) => {
+        ;(prisma as any).$on('error', (e: Prisma.LogEvent) => {
           fastify.log.error(
             {
               message: e.message,
@@ -88,7 +88,7 @@ const prismaPlugin: FastifyPluginAsync = async (fastify) => {
 
     if (logLevels.includes('warn')) {
       try {
-        (prisma as any).$on('warn', (e: Prisma.LogEvent) => {
+        ;(prisma as any).$on('warn', (e: Prisma.LogEvent) => {
           fastify.log.warn(
             {
               message: e.message,

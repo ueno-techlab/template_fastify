@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process'
 import { PrismaClient } from '@prisma/client'
-import { beforeAll, afterEach } from 'vitest'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { beforeAll } from 'vitest'
 
 beforeAll(async () => {
   // テストDB初期化
@@ -12,13 +13,17 @@ beforeAll(async () => {
   } catch (error) {
     console.error('Failed to run migrations:', error)
   }
-})
 
-afterEach(async () => {
-  // テストデータクリア
-  const prisma = new PrismaClient()
+  // テストデータをクリーンアップ
+  const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL,
+  })
+  const prisma = new PrismaClient({ adapter })
+
   try {
     await prisma.user.deleteMany()
+  } catch (error) {
+    console.error('Failed to clean test data:', error)
   } finally {
     await prisma.$disconnect()
   }

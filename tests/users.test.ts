@@ -11,13 +11,13 @@ beforeAll(async () => {
   app = await buildApp()
   await app.ready()
 
-  // テストユーザー作成
+  // テストユーザー作成（他のテストファイルと重複しないメールアドレスを使用）
   const hashedPassword = await bcrypt.hash('password123', 10)
   await app.prisma.user.create({
     data: {
-      email: 'test@example.com',
+      email: 'users-test@example.com',
       password: hashedPassword,
-      name: 'Test User',
+      name: 'Users Test User',
     },
   })
 
@@ -26,7 +26,7 @@ beforeAll(async () => {
     method: 'POST',
     url: '/auth/login',
     payload: {
-      email: 'test@example.com',
+      email: 'users-test@example.com',
       password: 'password123',
     },
   })
@@ -61,7 +61,7 @@ test('POST /users - duplicate email', async () => {
     method: 'POST',
     url: '/users',
     payload: {
-      email: 'test@example.com',
+      email: 'users-test@example.com', // beforeAllで作成したユーザーと同じメールアドレス
       password: 'password123',
       name: 'Duplicate',
     },
@@ -103,7 +103,7 @@ test('GET /users/me - with auth', async () => {
 
   expect(response.statusCode).toBe(200)
   const body = response.json()
-  expect(body.email).toBe('test@example.com')
-  expect(body.name).toBe('Test User')
+  expect(body.email).toBe('users-test@example.com')
+  expect(body.name).toBe('Users Test User')
   expect(body).not.toHaveProperty('password')
 })

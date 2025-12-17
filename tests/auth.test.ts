@@ -10,13 +10,13 @@ beforeAll(async () => {
   app = await buildApp()
   await app.ready()
 
-  // テストユーザー作成
+  // テストユーザー作成（他のテストファイルと重複しないメールアドレスを使用）
   const hashedPassword = await bcrypt.hash('password123', 10)
   await app.prisma.user.create({
     data: {
-      email: 'test@example.com',
+      email: 'auth-test@example.com',
       password: hashedPassword,
-      name: 'Test User',
+      name: 'Auth Test User',
     },
   })
 })
@@ -30,7 +30,7 @@ test('POST /auth/login - success', async () => {
     method: 'POST',
     url: '/auth/login',
     payload: {
-      email: 'test@example.com',
+      email: 'auth-test@example.com',
       password: 'password123',
     },
   })
@@ -46,7 +46,7 @@ test('POST /auth/login - invalid credentials', async () => {
     method: 'POST',
     url: '/auth/login',
     payload: {
-      email: 'test@example.com',
+      email: 'auth-test@example.com',
       password: 'wrongpassword',
     },
   })

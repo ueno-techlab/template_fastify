@@ -47,8 +47,11 @@ npm run dev
 npm run build
 npm start
 
-# テスト実行
+# テスト実行（watchモード）
 npm test
+
+# テスト実行（1回だけ）
+npm run test:run
 
 # Prismaマイグレーション
 npx prisma migrate dev
@@ -64,6 +67,7 @@ npx prisma migrate dev
 - [セットアップガイド](docs/setup.md) - 詳細な環境構築手順
 - [アーキテクチャガイド](docs/architecture.md) - ディレクトリ構成とコンセプト
 - [認証ガイド](docs/authentication.md) - JWT認証の使い方
+- [テストガイド](docs/testing.md) - テストの実行方法と書き方
 - [Docker権限設定ガイド](docs/docker-permissions.md) - 権限問題の解決方法
 - [ログ設定ガイド](docs/logging.md) - ログ出力のカスタマイズ
 

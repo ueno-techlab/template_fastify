@@ -1,0 +1,69 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+      args:
+        - USER_UID=${USER_UID:-1000}
+        - USER_GID=${USER_GID:-1000}
+    user: "${USER_UID:-1000}:${USER_GID:-1000}"
+    ports:
+      - 3000:3000
+    volumes:
+      - ./:/home/nodeuser/app
+    environment:
+      - TZ=Asia/Tokyo
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://user:password@db:5432/app
+      - JWT_SECRET=dev-secret-change-in-production-min-32-chars
+      - LOG_LEVEL=debug
+      - LOG_DIR=./logs
+      - LOG_PRETTY=true
+      - PRISMA_LOG_LEVEL=query,error,warn
+    depends_on:
+      db:
+        condition: service_healthy
+    tty: true
+    stdin_open: true
+    init: true
+    networks:
+      - default_network
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      TZ: Asia/Tokyo
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: app
+    ports:
+      - 5432:5432
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - default_network
+
+  db-test:
+    image: postgres:16-alpine
+    environment:
+      TZ: Asia/Tokyo
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: app_test
+    ports:
+      - 5433:5432
+    networks:
+      - default_network
+
+volumes:
+  db_data:
+
+networks:
+  default_network:
+    driver: bridge

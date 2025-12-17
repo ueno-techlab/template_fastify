@@ -1,0 +1,23 @@
+{
+  "name": "template-fastify",
+  "dockerComposeFile": ["../compose.yml"],
+  "service": "app",
+  "workspaceFolder": "/home/nodeuser/app",
+  "remoteUser": "nodeuser",
+  "overrideCommand": true,
+  "runServices": ["app", "db", "db-test"],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "editorconfig.editorconfig",
+        "eamodio.gitlens",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Prisma.prisma"
+      ],
+      "settings": {
+        "typescript.tsdk": "./node_modules/typescript/lib"
+      }
+    }
+  }
+}

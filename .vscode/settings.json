@@ -1,0 +1,14 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "typescript.suggest.autoImports": true,
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "terminal.integrated.bellDuration": 200,
+  "terminal.integrated.enableVisualBell": true,
+  "accessibility.signals.terminalBell": {
+    "sound": "on",
+    "announcement": "auto"
+  }
+}

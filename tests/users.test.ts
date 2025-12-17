@@ -37,10 +37,27 @@ afterAll(async () => {
   await app.close()
 })
 
+test('POST /users - without auth', async () => {
+  const response = await app.inject({
+    method: 'POST',
+    url: '/users',
+    payload: {
+      email: 'newuser@example.com',
+      password: 'password123',
+      name: 'New User',
+    },
+  })
+
+  expect(response.statusCode).toBe(401)
+})
+
 test('POST /users - create user', async () => {
   const response = await app.inject({
     method: 'POST',
     url: '/users',
+    headers: {
+      authorization: `Bearer ${authToken}`,
+    },
     payload: {
       email: 'newuser@example.com',
       password: 'password123',
@@ -60,6 +77,9 @@ test('POST /users - duplicate email', async () => {
   const response = await app.inject({
     method: 'POST',
     url: '/users',
+    headers: {
+      authorization: `Bearer ${authToken}`,
+    },
     payload: {
       email: 'users-test@example.com', // beforeAllで作成したユーザーと同じメールアドレス
       password: 'password123',
@@ -71,10 +91,22 @@ test('POST /users - duplicate email', async () => {
   expect(response.json()).toEqual({ error: 'Email already exists' })
 })
 
+test('GET /users - without auth', async () => {
+  const response = await app.inject({
+    method: 'GET',
+    url: '/users',
+  })
+
+  expect(response.statusCode).toBe(401)
+})
+
 test('GET /users - list users', async () => {
   const response = await app.inject({
     method: 'GET',
     url: '/users',
+    headers: {
+      authorization: `Bearer ${authToken}`,
+    },
   })
 
   expect(response.statusCode).toBe(200)

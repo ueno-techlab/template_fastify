@@ -309,22 +309,14 @@ export function createPrismaLogger(): Logger | null {
   // クエリログ用のローテーションストリーム
   const queryLogStream = createRotatingStream('query.log')
 
-  const consoleTransport = pino.transport({
-    target: 'pino-pretty',
-    level: 'debug',
-    options: {
-      colorize: true,
-      translateTime: 'HH:MM:ss Z',
-      messageFormat: '[PRISMA] {msg}',
-    },
-  })
-
+  // pino-prettyを使用する場合は、app.logにPrismaログを統合
+  // これにより、ログが確実にファイルに書き込まれる
   const queryLogger = pino(
     {
       level: 'debug',
       base: { context: 'prisma' },
     },
-    pino.multistream([{ stream: consoleTransport }, { stream: queryLogStream }])
+    queryLogStream
   )
 
   return queryLogger

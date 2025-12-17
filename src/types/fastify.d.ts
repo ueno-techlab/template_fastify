@@ -8,7 +8,7 @@ export interface JwtPayload {
 
 declare module 'fastify' {
   interface FastifyInstance {
-    prisma: PrismaClient
+    prisma: any // PrismaClient with $extends support
     authenticate: preHandlerHookHandler
   }
 

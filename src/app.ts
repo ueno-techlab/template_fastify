@@ -72,7 +72,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         err: error,
         req: request,
       },
-      'Unhandled error occurred'
+      '未処理のエラーが発生しました'
     )
 
     // エラーレスポンス
@@ -86,7 +86,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Not Found Handler
   app.setNotFoundHandler((request, reply) => {
-    request.log.warn({ req: request }, 'Route not found')
+    request.log.warn({ req: request }, 'ルートが見つかりませんでした')
     reply.status(404).send({ error: 'Not Found', statusCode: 404 })
   })
 

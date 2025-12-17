@@ -1,6 +1,6 @@
-import path from 'node:path'
 import pino, { type Logger, type LoggerOptions } from 'pino'
 import type { DestinationStream } from 'pino'
+import { createStream } from 'rotating-file-stream'
 
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const LOG_LEVEL =
@@ -106,30 +106,6 @@ function getDevelopmentTransport() {
     })
   }
 
-  // 全ログをファイル出力（pino-roll）
-  targets.push({
-    target: 'pino-roll',
-    level: 'debug',
-    options: {
-      file: path.join(LOG_DIR, '%Y-%m-%d-app.log'),
-      frequency: 'daily',
-      size: process.env.LOG_MAX_SIZE || '10M',
-      mkdir: true,
-    },
-  })
-
-  // エラーログを分離
-  targets.push({
-    target: 'pino-roll',
-    level: 'error',
-    options: {
-      file: path.join(LOG_DIR, '%Y-%m-%d-error.log'),
-      frequency: 'daily',
-      size: process.env.LOG_MAX_SIZE || '10M',
-      mkdir: true,
-    },
-  })
-
   return pino.transport({ targets })
 }
 
@@ -144,32 +120,6 @@ function getProductionTransport() {
     target: 'pino/file',
     level: 'info',
     options: { destination: 1 }, // stdout
-  })
-
-  // 全ログをファイル出力
-  targets.push({
-    target: 'pino-roll',
-    level: 'info',
-    options: {
-      file: path.join(LOG_DIR, '%Y-%m-%d-app.log'),
-      frequency: 'daily',
-      size: process.env.LOG_MAX_SIZE || '10M',
-      mkdir: true,
-      maxAge: parseInt(process.env.LOG_MAX_AGE_DAYS || '30', 10),
-    },
-  })
-
-  // エラーログを分離
-  targets.push({
-    target: 'pino-roll',
-    level: 'error',
-    options: {
-      file: path.join(LOG_DIR, '%Y-%m-%d-error.log'),
-      frequency: 'daily',
-      size: process.env.LOG_MAX_SIZE || '10M',
-      mkdir: true,
-      maxAge: parseInt(process.env.LOG_MAX_AGE_DAYS || '30', 10),
-    },
   })
 
   return pino.transport({ targets })
@@ -202,13 +152,144 @@ function getTransport(): DestinationStream {
 }
 
 /**
+ * ローテーション用ストリームを作成
+ * rotating-file-streamでは、ファイル名をジェネレータ関数で生成する
+ */
+function createRotatingStream(baseFilename: string) {
+  const maxSize = process.env.LOG_MAX_SIZE || '10M'
+  const maxAge = parseInt(process.env.LOG_MAX_AGE_DAYS || '30', 10)
+
+  // ファイル名から拡張子を分離（例: "app.log" -> { name: "app", ext: ".log" }）
+  const extIndex = baseFilename.lastIndexOf('.')
+  const name = extIndex > 0 ? baseFilename.substring(0, extIndex) : baseFilename
+  const ext = extIndex > 0 ? baseFilename.substring(extIndex) : ''
+
+  return createStream(
+    (time: Date | number | null) => {
+      if (!time) {
+        // 現在のファイル名
+        return `${name}${ext}`
+      }
+
+      // ローテーション後のファイル名: yyyy-mm-dd.name.log
+      const date = time instanceof Date ? time : new Date(time)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+
+      return `${year}-${month}-${day}.${name}${ext}`
+    },
+    {
+      interval: '1d', // 毎日ローテーション
+      path: LOG_DIR,
+      size: maxSize as `${number}${'M' | 'B' | 'K' | 'G'}`,
+      maxFiles: maxAge, // 保持する日数
+      compress: 'gzip', // 古いログを圧縮
+    }
+  )
+}
+
+/**
  * メインロガーインスタンスを作成
  */
 export function createLogger(): Logger {
   const baseOptions = getBaseLoggerOptions()
   const transport = getTransport()
 
-  return pino(baseOptions, transport)
+  // テスト環境ではファイル出力しない
+  if (NODE_ENV === 'test') {
+    return pino(baseOptions, transport)
+  }
+
+  // 全ログ用のローテーションストリーム
+  const appLogStream = createRotatingStream('app.log')
+
+  // エラーログ用のローテーションストリーム
+  const errorLogStream = createRotatingStream('error.log')
+
+  // マルチストリームを作成（コンソール + ファイル）
+  const streams = [
+    { stream: transport }, // コンソール出力
+    { stream: appLogStream }, // 全ログをファイルに
+  ]
+
+  // エラーログは別ファイルにも出力
+  const logger = pino(baseOptions, pino.multistream(streams))
+
+  // エラーレベル以上のログを別ファイルに出力
+  const errorLogger = pino({ level: 'error' }, errorLogStream)
+
+  // 元のロガーをラップしてエラーログを2箇所に出力
+  const originalError = logger.error.bind(logger)
+  const originalFatal = logger.fatal.bind(logger)
+
+  logger.error = (obj: any, msg?: string, ...args: any[]) => {
+    originalError(obj, msg, ...args)
+    errorLogger.error(obj, msg, ...args)
+  }
+
+  logger.fatal = (obj: any, msg?: string, ...args: any[]) => {
+    originalFatal(obj, msg, ...args)
+    errorLogger.fatal(obj, msg, ...args)
+  }
+
+  return logger
+}
+
+/**
+ * Fastify用のロガー設定を取得
+ * Fastifyが期待する形式でロガーを提供
+ */
+export function getFastifyLoggerConfig() {
+  const baseOptions = getBaseLoggerOptions()
+
+  // テスト環境ではファイル出力しない
+  if (NODE_ENV === 'test') {
+    return {
+      ...baseOptions,
+      stream: getTransport(),
+    }
+  }
+
+  // 全ログ用のローテーションストリーム
+  const appLogStream = createRotatingStream('app.log')
+
+  // エラーログ用のローテーションストリーム
+  const errorLogStream = createRotatingStream('error.log')
+
+  // マルチストリームを作成（コンソール + ファイル）
+  const streams = [
+    { stream: getTransport() }, // コンソール出力
+    { stream: appLogStream }, // 全ログをファイルに
+  ]
+
+  // エラーログ専用のロガーを作成（Fastifyのロガーとは別）
+  const errorLogger = pino({ level: 'error' }, errorLogStream)
+
+  // Fastifyに渡す設定オブジェクト
+  const loggerConfig: any = {
+    ...baseOptions,
+    stream: pino.multistream(streams),
+  }
+
+  // エラーログを別ファイルにも出力するためのフック
+  // これはFastifyがロガーを作成した後に呼ばれる
+  loggerConfig.serializers = {
+    ...baseOptions.serializers,
+    err(err: any) {
+      // 元のシリアライザーを呼ぶ
+      const serialized = baseOptions.serializers?.err?.(err) || {
+        type: err.constructor.name,
+        message: err.message,
+        stack: err.stack,
+      }
+      // エラーログを別ファイルにも記録
+      errorLogger.error(serialized)
+      return serialized
+    },
+  }
+
+  return loggerConfig
 }
 
 /**
@@ -225,36 +306,28 @@ export function createPrismaLogger(): Logger | null {
     return null
   }
 
+  // クエリログ用のローテーションストリーム
+  const queryLogStream = createRotatingStream('query.log')
+
+  const consoleTransport = pino.transport({
+    target: 'pino-pretty',
+    level: 'debug',
+    options: {
+      colorize: true,
+      translateTime: 'HH:MM:ss Z',
+      messageFormat: '[PRISMA] {msg}',
+    },
+  })
+
   const queryLogger = pino(
     {
       level: 'debug',
       base: { context: 'prisma' },
     },
-    pino.transport({
-      targets: [
-        // コンソール出力
-        {
-          target: 'pino-pretty',
-          level: 'debug',
-          options: {
-            colorize: true,
-            translateTime: 'HH:MM:ss Z',
-            messageFormat: '[PRISMA] {msg}',
-          },
-        },
-        // ファイル出力
-        {
-          target: 'pino-roll',
-          level: 'debug',
-          options: {
-            file: path.join(LOG_DIR, '%Y-%m-%d-query.log'),
-            frequency: 'daily',
-            size: '10M',
-            mkdir: true,
-          },
-        },
-      ],
-    })
+    pino.multistream([
+      { stream: consoleTransport },
+      { stream: queryLogStream },
+    ])
   )
 
   return queryLogger
@@ -262,14 +335,3 @@ export function createPrismaLogger(): Logger | null {
 
 // デフォルトエクスポート
 export const logger = createLogger()
-
-/**
- * Fastify用のロガー設定を取得
- * Fastifyはロガーインスタンスではなく設定オブジェクトを期待する
- */
-export function getFastifyLoggerConfig() {
-  return {
-    ...getBaseLoggerOptions(),
-    stream: getTransport(),
-  }
-}

@@ -15,7 +15,11 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "logs:view": "cat logs/app.log | npx pino-pretty",
+    "logs:watch": "tail -f logs/app.log | npx pino-pretty",
+    "logs:errors": "cat logs/error.log | npx pino-pretty",
+    "logs:errors:watch": "tail -f logs/error.log | npx pino-pretty"
   },
   "keywords": [
     "fastify",
@@ -41,7 +45,7 @@
     "fastify-plugin": "^5.0.1",
     "pg": "^8.16.3",
     "pino": "^9.7.0",
-    "pino-roll": "^1.2.0"
+    "rotating-file-stream": "^3.2.7"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

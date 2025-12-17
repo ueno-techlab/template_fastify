@@ -29,7 +29,10 @@ cp .env.example .env
 npx prisma generate
 npx prisma migrate dev
 
-# 5. 開発サーバー起動
+# 5. 初期データ投入（オプション）
+npm run prisma:seed
+
+# 6. 開発サーバー起動
 npm run dev
 ```
 
@@ -55,6 +58,9 @@ npm run test:run
 
 # Prismaマイグレーション
 npx prisma migrate dev
+
+# 初期データ投入
+npm run prisma:seed
 ```
 
 ## APIドキュメント
@@ -67,9 +73,11 @@ npx prisma migrate dev
 - [セットアップガイド](docs/setup.md) - 詳細な環境構築手順
 - [アーキテクチャガイド](docs/architecture.md) - ディレクトリ構成とコンセプト
 - [認証ガイド](docs/authentication.md) - JWT認証の使い方
+- [シーディングガイド](docs/seeding.md) - 初期データの投入方法
 - [テストガイド](docs/testing.md) - テストの実行方法と書き方
 - [Docker権限設定ガイド](docs/docker-permissions.md) - 権限問題の解決方法
 - [ログ設定ガイド](docs/logging.md) - ログ出力のカスタマイズ
+- [SQLログ確認ガイド](docs/sql-logging.md) - 実際のSQLクエリの確認方法
 
 ## ライセンス
 
